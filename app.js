@@ -59,6 +59,35 @@ const TEST_JSON_FILE = 'test.electrojson.json';
         const title = data.title || data.name || 'Тест';
         testTitleDisplay.textContent = title;
         metaCount.textContent = `${questions.length} вопросов`;
+
+        // Range selector generation
+        const rangeSelectorContainer = document.getElementById('range-selector-container');
+        const rangeSelect = document.getElementById('range-select');
+
+        if (questions.length > 50) {
+            rangeSelect.innerHTML = '';
+
+            // Add 'all' option
+            const allOpt = document.createElement('option');
+            allOpt.value = 'all';
+            allOpt.textContent = `Все вопросы (1 - ${questions.length})`;
+            rangeSelect.appendChild(allOpt);
+
+            // Add 50-question blocks
+            const RANGE_SIZE = 50;
+            for (let i = 0; i < questions.length; i += RANGE_SIZE) {
+                const start = i;
+                const end = Math.min(i + RANGE_SIZE - 1, questions.length - 1);
+                const opt = document.createElement('option');
+                opt.value = `${start}-${end}`;
+                opt.textContent = `Вопросы ${start + 1} – ${end + 1}`;
+                rangeSelect.appendChild(opt);
+            }
+
+            rangeSelectorContainer.style.display = 'flex';
+        } else {
+            rangeSelectorContainer.style.display = 'none';
+        }
     } catch (err) {
         testTitleDisplay.textContent = 'Ошибка загрузки теста';
         btnStart.disabled = true;
@@ -103,7 +132,14 @@ function initTest(data, onlyErrors = false) {
         });
         testOrder = shuffleArray(errorIndexes);
     } else {
-        questions = data.questions;
+        // Apply range selection if enabled
+        const rangeSelect = document.getElementById('range-select');
+        if (rangeSelect && rangeSelect.value !== 'all' && data.questions.length > 50) {
+            const [startIdx, endIdx] = rangeSelect.value.split('-').map(Number);
+            questions = data.questions.slice(startIdx, endIdx + 1);
+        } else {
+            questions = data.questions;
+        }
         testOrder = shuffleArray(Array.from({ length: questions.length }, (_, i) => i));
     }
 
